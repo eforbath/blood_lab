@@ -185,6 +185,14 @@ ggplot(data3, aes(x=Blood, y=n)) +
   xlab("Treatment") +
   ylab("# of visits")
 
+data3$Blood <- factor(data3$Blood ,
+                       levels = c('Control','Sham', 'Blood'),
+                      ordered = TRUE)
+
+ggplot(data3, aes(x=Blood, y=n)) +
+  geom_boxplot() +
+  labs(y="Treatment", x="#of visits")
+
 
 aov <- aov(n ~ Blood, data=data3)
 TukeyHSD(aov)
