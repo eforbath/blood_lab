@@ -46,6 +46,9 @@ bands <- read.csv("bands.csv")
 
 data3 <- merge(data2, bands, by = "Tag")
 
+data3 <- subset(data3, day.1 <=4 )
+data3 <- subset(data3, day.1 >=0)
+
 ## regular plots
 plot(n ~ day.1, data = data3, col = data3$Blood)
 
@@ -61,13 +64,13 @@ lm1 <- lm(n ~ day.1, data = blood)
 summary(lm1)
 coef(lm1)
 bl <- ggplot(blood, aes(x=day.1, y=n, group=Tag)) +
-  geom_line(color = "red")+
+  geom_point(color = "red", size = 5)+
   ylim(c(1, 6))+
-  xlim(c(0,40)) +
+  xlim(c(0,3)) +
   title("BLOOD") +
   xlab("") +
   ylab("# of visits") +
-  geom_abline(slope = -0.00466, intercept =  1.79843447, 
+  geom_abline(slope =  0.2142857, intercept =  1.5, 
               col = "black", 
               linetype = "dashed")
 bl
@@ -77,32 +80,29 @@ lm2 <- lm(n ~ day.1, data = sham)
 summary(lm2)
 coef(lm2)
 sh <- ggplot(sham, aes(x=day.1, y=n)) +
-  geom_line(color = "darkgreen")+
-  stat_smooth(method = 'loess', col = "black", se= FALSE) +
+  geom_point(color = "darkgreen", size = 5)+
   ylim(c(1, 6))+
-  xlim(c(0,40)) +
+  xlim(c(0,3)) +
   title("SHAM") +
   xlab("") +
-  ylab("# of visits")
-
-sh
- # geom_abline(intercept = 1.857, slope = -0.00299, 
+  ylab("# of visits") +
+ geom_abline(intercept =  1.6105263 , slope = 0.2421053 , 
               col = "black", 
               linetype = "dashed")
-install.packages("plotly")
-library(plotly)
+sh
+
 
 lm3 <- lm(n ~ day.1, data = con)
 summary(lm3)
 coef(lm3)
 co <- ggplot(con, aes(x=day.1, y=n, group=Tag)) +
-  geom_line(color = "blue")+
+  geom_point(color = "blue", size = 5)+
   ylim(c(1, 6)) +
-  xlim(c(0,40)) +
+  xlim(c(0,3)) +
   title("CONTROL") +
   xlab("days since capture") +
   ylab("# of visits") +
-  geom_abline(intercept =  1.9003, slope = -0.001667, 
+  geom_abline(intercept =  1.5854922 , slope = 0.1943005 , 
               col = "black",
               linetype = "dashed")
 co
@@ -122,51 +122,75 @@ ggplot(data3, aes(x=day.1, y=n, group=Tag, color = Blood)) +
 
 
 ##### plot by TOTAL VISITS (not by tag) #####
+blood_ag <- aggregate(blood$n, by=list(day.1=blood$day.1), FUN=sum)
+blood_ag
 
-bl <- ggplot(blood, aes(x=day.1, y=n)) +
-  stat_smooth(method = 'loess', col = "black", se= FALSE, linetype = "dashed") +
+bl <- ggplot(blood_ag, aes(x=day.1, y=x)) +
+  stat_smooth(method = 'loess', 
+              col = "black", 
+              se= FALSE, 
+              linetype = "dashed") +
   geom_line(color = "red")+
-  ylim(c(1, 6))+
+  ylim(c(1, 13))+
   xlim(c(0,40)) +
   title("BLOOD") +
   xlab("") +
-  ylab("# of visits") 
+  ylab("sum # of visits") 
 bl
 
 
+sham_ag <- aggregate(sham$n, by=list(day.1=sham$day.1), FUN=sum)
+sham_ag
 
-sh <- ggplot(sham, aes(x=day.1, y=n)) +
+sh <- ggplot(sham_ag, aes(x=day.1, y=x)) +
   geom_line(color = "darkgreen")+
-  stat_smooth(method = 'loess', col = "black", se= FALSE, linetype = "dashed") +
-  ylim(c(1, 6))+
+  stat_smooth(method = 'loess',
+              col = "black", 
+              se= FALSE, 
+              linetype = "dashed") +
+  ylim(c(1, 13))+
   xlim(c(0,40)) +
   title("SHAM") +
   xlab("") +
-  ylab("# of visits")
+  ylab("sum # of visits")
 sh
 
 
 
+con_ag <- aggregate(con$n, by=list(day.1=con$day.1), FUN=sum)
+con_ag
 
-co <- ggplot(con, aes(x=day.1, y=n)) +
-  stat_smooth(method = 'loess', col = "black", se= FALSE, linetype = "dashed") +
+co <- ggplot(con_ag, aes(x=day.1, y=x)) +
+  stat_smooth(method = 'loess', 
+              col = "black", 
+              se= FALSE, 
+              linetype = "dashed") +
   geom_line(color = "blue")+
-  ylim(c(1, 6)) +
+  ylim(c(1, 13)) +
   xlim(c(0,40)) +
   title("CONTROL") +
   xlab("days since capture") +
-  ylab("# of visits") 
+  ylab("sum # of visits") 
 co
-
-install.packages("ggpubr")
-library(ggpubr)
 
 ggarrange(bl, sh, co, 
           labels = c("A", "B", "C"),
           ncol = 1, nrow = 3)
 
+##### boxplots #####
 
-## statistical analyses
+
+ggplot(data3, aes(x=Blood, y=n)) +
+  geom_boxplot() +
+  xlab("Treatment") +
+  ylab("# of visits")
+
+
+aov <- aov(n ~ Blood, data=data3)
+TukeyHSD(aov)
+
+
+##### statistical analyses ???? #####
 aov <- aov(n ~ Blood, data = data3)
 summary(aov)
 aov
@@ -178,6 +202,6 @@ kt <- kruskal.test(n ~ Blood, data = data3)
 summary(kt)
 
 
-test <- pairwise.wilcox.test(data3$n ~ data3$day.1, p.adjust.method = "BH")
-
-
+test <- pairwise.wilcox.test(cbind(data3$n, data3$day.1), data3$Blood, p.adjust.method = "BH")
+test
+summary(test)
